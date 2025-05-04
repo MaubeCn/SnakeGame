@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Гра Змійка</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      background-color: #ffffff;
+      box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.1);
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Гра Змійка</h1>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const gridSize = 20;
+    let snake = [{ x: 160, y: 160 }];
+    let dx = gridSize;
+    let dy = 0;
+    let food = randomFood();
+    let gameRunning = true;
+
+    document.addEventListener('keydown', changeDirection);
+
+    function randomFood() {
+      return {
+        x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+        y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize
+      };
+    }
+
+    function changeDirection(event) {
+      const key = event.keyCode;
+
+    
+      if (key === 37 && dx === 0) { dx = -gridSize; dy = 0; } 
+      if (key === 38 && dy === 0) { dx = 0; dy = -gridSize; } 
+      if (key === 39 && dx === 0) { dx = gridSize; dy = 0; } 
+      if (key === 40 && dy === 0) { dx = 0; dy = gridSize; } 
+
+    }
+
+    function drawSnakePart(part) {
+      ctx.fillStyle = '#4f46e5';
+      ctx.fillRect(part.x, part.y, gridSize - 2, gridSize - 2);
+    }
+
+    function drawFood() {
+      ctx.fillStyle = '#34d399';
+      ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
+    }
+
+    function moveSnake() {
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        food = randomFood();
+      } else {
+        snake.pop();
+      }
+    }
+
+    function checkCollision() {
+      const head = snake[0];
+
+      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+        gameRunning = false;
+      }
+
+      for (let i = 4; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          gameRunning = false;
+        }
+      }
+    }
+
+    function gameLoop() {
+      if (!gameRunning) {
+        alert('Гра закінчена! 🐍');
+        document.location.reload();
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawFood();
+      moveSnake();
+      snake.forEach(drawSnakePart);
+      checkCollision();
+    }
+
+    setInterval(gameLoop, 100);
+  </script>
+
+</body>
+</html>
