@@ -10,6 +10,8 @@ here a link to game if u want play --> https://maubecn.github.io/SnakeGame/ <---
 
 (btw in my profile my dicrod and telegram username and if want u can give me ideas for projects ^^)
 
+btw i forgot to say if u found any bugs (small chance) saned this bugs to me i will try to fix it
+
 UPDATE LOGS:
 
-Nothing now...
+Nothing now... (making huge update)
