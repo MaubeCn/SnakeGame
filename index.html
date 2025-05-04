@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Snake Game</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -16,19 +16,21 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      overflow: hidden;
     }
 
     h1 {
       color: #1f2937;
-      margin-bottom: 10px;
+      margin: 10px 0;
     }
 
-    #scoreboard {
-      margin-bottom: 20px;
-      color: #374151;
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 10px;
       font-weight: 600;
-      font-size: 18px;
+      color: #1f2937;
     }
 
     canvas {
@@ -36,42 +38,118 @@
       box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.1);
       border-radius: 16px;
     }
+
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      background: #4f46e5;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 10px;
+    }
+
+    .btn:active {
+      background: #3730a3;
+    }
+
+    #pauseBtn {
+      margin-top: 10px;
+      font-size: 16px;
+      background: #facc15;
+      color: #1f2937;
+    }
   </style>
 </head>
 <body>
 
   <h1>Snake Game</h1>
-  <div id="scoreboard">Score: 0 | High Score: 0</div>
+  <div id="hud">
+    <div id="score">Score: 0 | High Score: 0</div>
+    <div id="timer">Time: 00:00</div>
+  </div>
   <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <div id="controls">
+    <button class="btn" onclick="changeDirectionManual(38)">⬆️</button>
+    <button class="btn" onclick="changeDirectionManual(37)">⬅️</button>
+    <button class="btn" onclick="changeDirectionManual(40)">⬇️</button>
+    <button class="btn" onclick="changeDirectionManual(39)">➡️</button>
+  </div>
+
+  <button class="btn" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const scoreboard = document.getElementById('scoreboard');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
 
     const gridSize = 20;
     let snake = [{ x: 160, y: 160 }];
     let dx = gridSize;
     let dy = 0;
-    let food = generateFood();
+    let food = null;
     let gameRunning = true;
+    let paused = false;
     let score = 0;
     let highScore = localStorage.getItem('highScore') || 0;
 
-    document.addEventListener('keydown', changeDirection);
+    let startTime = Date.now();
+    let elapsedSeconds = 0;
 
-    function generateFood() {
-      const rand = Math.random();
-      let type;
-      if (rand < 0.2) type = 'red';       // 20%
-      else if (rand < 0.3) type = 'yellow'; // 10%
-      else if (rand < 0.7) type = 'green'; // 40%
-      else type = 'blue';                 // 30%
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'p' || e.key === 'P') {
+        togglePause();
+      } else {
+        changeDirection(e);
+      }
+    });
+
+    function updateTimer() {
+      if (!paused && gameRunning) {
+        elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+        const seconds = String(elapsedSeconds % 60).padStart(2, '0');
+        timerDisplay.textContent = `Time: ${minutes}:${seconds}`;
+      }
+    }
+
+    setInterval(updateTimer, 1000);
+
+    function randomFood() {
+      const types = [
+        { color: '#34d399', effect: 1, score: 1, chance: 40 },  // Green +1
+        { color: '#3b82f6', effect: 5, score: 5, chance: 30 },  // Blue +5
+        { color: '#ef4444', effect: -1, score: -1, chance: 20 }, // Red -1
+        { color: '#facc15', effect: -5, score: -5, chance: 10 }  // Yellow -5
+      ];
+      let total = types.reduce((sum, t) => sum + t.chance, 0);
+      let rand = Math.random() * total;
+      let cumulative = 0;
+      let chosen = types[0];
+
+      for (let t of types) {
+        cumulative += t.chance;
+        if (rand < cumulative) {
+          chosen = t;
+          break;
+        }
+      }
 
       return {
         x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
         y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize,
-        type: type
+        ...chosen
       };
     }
 
@@ -83,31 +161,18 @@
       if (key === 40 && dy === 0) { dx = 0; dy = gridSize; }
     }
 
+    function changeDirectionManual(key) {
+      changeDirection({ keyCode: key });
+    }
+
     function drawSnakePart(part) {
       ctx.fillStyle = '#4f46e5';
       ctx.fillRect(part.x, part.y, gridSize - 2, gridSize - 2);
     }
 
     function drawFood() {
-      let color;
-      switch (food.type) {
-        case 'red': color = '#ef4444'; break;
-        case 'yellow': color = '#facc15'; break;
-        case 'green': color = '#22c55e'; break;
-        case 'blue': color = '#3b82f6'; break;
-      }
-      ctx.fillStyle = color;
+      ctx.fillStyle = food.color;
       ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
-    }
-
-    function updateScore(points) {
-      score += points;
-      if (score < 0) score = 0;
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-      }
-      scoreboard.textContent = `Score: ${score} | High Score: ${highScore}`;
     }
 
     function moveSnake() {
@@ -115,42 +180,23 @@
       snake.unshift(head);
 
       if (head.x === food.x && head.y === food.y) {
-        switch (food.type) {
-          case 'red':
-            updateScore(-1);
-            snake.pop(); break;
-          case 'yellow':
-            updateScore(-5);
-            for (let i = 0; i < 5; i++) {
-              if (snake.length > 1) snake.pop();
-            }
-            break;
-          case 'green':
-            updateScore(1);
-            snake.push({ ...snake[snake.length - 1] });
-            break;
-          case 'blue':
-            updateScore(5);
-            for (let i = 0; i < 5; i++) {
-              snake.push({ ...snake[snake.length - 1] });
-            }
-            break;
+        if (food.effect > 0) {
+          for (let i = 0; i < food.effect - 1; i++) snake.push({});
+        } else {
+          snake.splice(-Math.min(-food.effect, snake.length - 1));
         }
-        food = generateFood();
+        score += food.score;
+        food = randomFood();
       } else {
-        snake.pop(); // normal movement
+        snake.pop();
       }
     }
 
     function checkCollision() {
       const head = snake[0];
-      if (
-        head.x < 0 || head.x >= canvas.width ||
-        head.y < 0 || head.y >= canvas.height
-      ) {
+      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
         gameRunning = false;
       }
-
       for (let i = 4; i < snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y) {
           gameRunning = false;
@@ -158,22 +204,37 @@
       }
     }
 
+    function updateScore() {
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
+      scoreDisplay.textContent = `Score: ${score} | High Score: ${highScore}`;
+    }
+
+    function togglePause() {
+      paused = !paused;
+      document.getElementById('pauseBtn').textContent = paused ? '▶️ Resume' : '⏸️ Pause';
+    }
+
     function gameLoop() {
-      if (!gameRunning || snake.length < 1) {
-        alert(`Game Over! 🐍\nFinal Score: ${score}`);
+      if (!gameRunning) {
+        alert(`Game Over! 🐍\nScore: ${score}\nTime: ${timerDisplay.textContent.split(": ")[1]}`);
         document.location.reload();
         return;
       }
+
+      if (paused) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawFood();
       moveSnake();
       snake.forEach(drawSnakePart);
       checkCollision();
+      updateScore();
     }
 
-    // Initialize scoreboard
-    updateScore(0);
+    food = randomFood();
     setInterval(gameLoop, 100);
   </script>
 
