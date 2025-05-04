@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Гра Змійка</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Snake Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
@@ -21,7 +21,14 @@
 
     h1 {
       color: #1f2937;
+      margin-bottom: 10px;
+    }
+
+    #scoreboard {
       margin-bottom: 20px;
+      color: #374151;
+      font-weight: 600;
+      font-size: 18px;
     }
 
     canvas {
@@ -33,38 +40,47 @@
 </head>
 <body>
 
-  <h1>Гра Змійка</h1>
+  <h1>Snake Game</h1>
+  <div id="scoreboard">Score: 0 | High Score: 0</div>
   <canvas id="gameCanvas" width="400" height="400"></canvas>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const scoreboard = document.getElementById('scoreboard');
 
     const gridSize = 20;
     let snake = [{ x: 160, y: 160 }];
     let dx = gridSize;
     let dy = 0;
-    let food = randomFood();
+    let food = generateFood();
     let gameRunning = true;
+    let score = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
 
     document.addEventListener('keydown', changeDirection);
 
-    function randomFood() {
+    function generateFood() {
+      const rand = Math.random();
+      let type;
+      if (rand < 0.2) type = 'red';       // 20%
+      else if (rand < 0.3) type = 'yellow'; // 10%
+      else if (rand < 0.7) type = 'green'; // 40%
+      else type = 'blue';                 // 30%
+
       return {
         x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
-        y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize
+        y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize,
+        type: type
       };
     }
 
     function changeDirection(event) {
       const key = event.keyCode;
-
-    
-      if (key === 37 && dx === 0) { dx = -gridSize; dy = 0; } 
-      if (key === 38 && dy === 0) { dx = 0; dy = -gridSize; } 
-      if (key === 39 && dx === 0) { dx = gridSize; dy = 0; } 
-      if (key === 40 && dy === 0) { dx = 0; dy = gridSize; } 
-
+      if (key === 37 && dx === 0) { dx = -gridSize; dy = 0; }
+      if (key === 38 && dy === 0) { dx = 0; dy = -gridSize; }
+      if (key === 39 && dx === 0) { dx = gridSize; dy = 0; }
+      if (key === 40 && dy === 0) { dx = 0; dy = gridSize; }
     }
 
     function drawSnakePart(part) {
@@ -73,8 +89,25 @@
     }
 
     function drawFood() {
-      ctx.fillStyle = '#34d399';
+      let color;
+      switch (food.type) {
+        case 'red': color = '#ef4444'; break;
+        case 'yellow': color = '#facc15'; break;
+        case 'green': color = '#22c55e'; break;
+        case 'blue': color = '#3b82f6'; break;
+      }
+      ctx.fillStyle = color;
       ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
+    }
+
+    function updateScore(points) {
+      score += points;
+      if (score < 0) score = 0;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
+      scoreboard.textContent = `Score: ${score} | High Score: ${highScore}`;
     }
 
     function moveSnake() {
@@ -82,16 +115,39 @@
       snake.unshift(head);
 
       if (head.x === food.x && head.y === food.y) {
-        food = randomFood();
+        switch (food.type) {
+          case 'red':
+            updateScore(-1);
+            snake.pop(); break;
+          case 'yellow':
+            updateScore(-5);
+            for (let i = 0; i < 5; i++) {
+              if (snake.length > 1) snake.pop();
+            }
+            break;
+          case 'green':
+            updateScore(1);
+            snake.push({ ...snake[snake.length - 1] });
+            break;
+          case 'blue':
+            updateScore(5);
+            for (let i = 0; i < 5; i++) {
+              snake.push({ ...snake[snake.length - 1] });
+            }
+            break;
+        }
+        food = generateFood();
       } else {
-        snake.pop();
+        snake.pop(); // normal movement
       }
     }
 
     function checkCollision() {
       const head = snake[0];
-
-      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+      if (
+        head.x < 0 || head.x >= canvas.width ||
+        head.y < 0 || head.y >= canvas.height
+      ) {
         gameRunning = false;
       }
 
@@ -103,20 +159,21 @@
     }
 
     function gameLoop() {
-      if (!gameRunning) {
-        alert('Гра закінчена! 🐍');
+      if (!gameRunning || snake.length < 1) {
+        alert(`Game Over! 🐍\nFinal Score: ${score}`);
         document.location.reload();
         return;
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       drawFood();
       moveSnake();
       snake.forEach(drawSnakePart);
       checkCollision();
     }
 
+    // Initialize scoreboard
+    updateScore(0);
     setInterval(gameLoop, 100);
   </script>
 
