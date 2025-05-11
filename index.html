@@ -14,7 +14,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       height: 100vh;
     }
 
@@ -39,14 +39,6 @@
       border-radius: 16px;
     }
 
-    #controls {
-      display: grid;
-      grid-template-columns: repeat(3, 60px);
-      grid-template-rows: repeat(2, 60px);
-      gap: 10px;
-      margin-top: 20px;
-    }
-
     .btn {
       background: #4f46e5;
       color: white;
@@ -68,6 +60,36 @@
       background: #facc15;
       color: #1f2937;
     }
+
+    #main-container {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    #controlsWrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 10px;
+    }
+
+    #switches {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #switches label {
+      font-size: 14px;
+      color: #1f2937;
+    }
   </style>
 </head>
 <body>
@@ -77,16 +99,29 @@
     <div id="score">Score: 0 | High Score: 0</div>
     <div id="timer">Time: 00:00</div>
   </div>
+
   <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-  <div id="controls">
-    <button class="btn" onclick="changeDirectionManual(38)">⬆️</button>
-    <button class="btn" onclick="changeDirectionManual(37)">⬅️</button>
-    <button class="btn" onclick="changeDirectionManual(40)">⬇️</button>
-    <button class="btn" onclick="changeDirectionManual(39)">➡️</button>
-  </div>
+  <div id="main-container">
+    <div id="controlsWrapper">
+      <div id="controls">
+        <button class="btn" onclick="changeDirectionManual(38)">⬆️</button>
+        <button class="btn" onclick="changeDirectionManual(37)">⬅️</button>
+        <button class="btn" onclick="changeDirectionManual(40)">⬇️</button>
+        <button class="btn" onclick="changeDirectionManual(39)">➡️</button>
+      </div>
+      <button class="btn" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
+    </div>
 
-  <button class="btn" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
+    <div id="switches">
+      <label><input type="checkbox" id="blackApple" checked /> Black apple</label>
+      <label><input type="checkbox" id="twoApples" /> 2 apples</label>
+      <label><input type="checkbox" id="threeApples" /> 3 apples</label>
+      <label><input type="checkbox" id="fourApples" /> 4 apples</label>
+      <label><input type="checkbox" id="fiveApples" /> 5 apples</label>
+      <label><input type="checkbox" id="whiteApple" /> White apple</label>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -98,7 +133,7 @@
     let snake = [{ x: 160, y: 160 }];
     let dx = gridSize;
     let dy = 0;
-    let food = null;
+    let foods = [];
     let gameRunning = true;
     let paused = false;
     let score = 0;
@@ -126,31 +161,61 @@
 
     setInterval(updateTimer, 1000);
 
-    function randomFood() {
+    function randomFoodPair() {
       const types = [
-        { color: '#34d399', effect: 1, score: 1, chance: 40 },  // Green +1
-        { color: '#3b82f6', effect: 5, score: 5, chance: 30 },  // Blue +5
-        { color: '#ef4444', effect: -1, score: -1, chance: 20 }, // Red -1
-        { color: '#facc15', effect: -5, score: -5, chance: 10 }  // Yellow -5
+        { color: '#34d399', effect: 1, score: 1, chance: 35 },
+        { color: '#3b82f6', effect: 5, score: 5, chance: 25 },
+        { color: '#ef4444', effect: -1, score: -1, chance: 20 },
+        { color: '#facc15', effect: -5, score: -5, chance: 10 }
       ];
-      let total = types.reduce((sum, t) => sum + t.chance, 0);
-      let rand = Math.random() * total;
-      let cumulative = 0;
-      let chosen = types[0];
 
-      for (let t of types) {
-        cumulative += t.chance;
-        if (rand < cumulative) {
-          chosen = t;
-          break;
-        }
+      if (document.getElementById('blackApple').checked) {
+        types.push({ color: '#111111', effect: 'death', score: 0, chance: 5 });
       }
 
-      return {
-        x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
-        y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize,
-        ...chosen
-      };
+      if (document.getElementById('whiteApple').checked) {
+        types.push({ color: '#ffffff', effect: 'win', score: 0, chance: 1 });
+      }
+
+      function pickFood() {
+        let total = types.reduce((sum, t) => sum + t.chance, 0);
+        let rand = Math.random() * total;
+        let cumulative = 0;
+        for (let t of types) {
+          cumulative += t.chance;
+          if (rand < cumulative) {
+            return {
+              x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+              y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize,
+              ...t
+            };
+          }
+        }
+        return null;
+      }
+
+      let count = 1;
+      if (document.getElementById('twoApples').checked) count = 2;
+      if (document.getElementById('threeApples').checked) count = 3;
+      if (document.getElementById('fourApples').checked) count = 4;
+      if (document.getElementById('fiveApples').checked) count = 5;
+
+      const foodSet = [];
+      for (let i = 0; i < count; i++) {
+        let f;
+        let attempts = 0;
+        do {
+          f = pickFood();
+          attempts++;
+        } while (
+          f.color === '#111111' &&
+          foodSet.some(existing => existing.color === '#111111') &&
+          attempts < 10
+        );
+        foodSet.push(f);
+      }
+
+      return foodSet;
     }
 
     function changeDirection(event) {
@@ -171,22 +236,46 @@
     }
 
     function drawFood() {
-      ctx.fillStyle = food.color;
-      ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
+      for (const f of foods) {
+        ctx.fillStyle = f.color;
+        ctx.fillRect(f.x, f.y, gridSize - 2, gridSize - 2);
+      }
     }
 
     function moveSnake() {
       const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
 
-      if (head.x === food.x && head.y === food.y) {
-        if (food.effect > 0) {
-          for (let i = 0; i < food.effect - 1; i++) snake.push({});
-        } else {
-          snake.splice(-Math.min(-food.effect, snake.length - 1));
+      let ateFood = false;
+
+      for (let i = 0; i < foods.length; i++) {
+        const f = foods[i];
+        if (head.x === f.x && head.y === f.y) {
+          if (f.effect === 'death') {
+            gameRunning = false;
+            return;
+          }
+
+          if (f.effect === 'win') {
+            alert("🎉 Congratulations! You've complete the snake game!");
+            gameRunning = false;
+            return;
+          }
+
+          if (f.effect > 0) {
+            for (let j = 0; j < f.effect - 1; j++) snake.push({});
+          } else {
+            snake.splice(-Math.min(-f.effect, snake.length - 1));
+          }
+
+          score += f.score;
+          ateFood = true;
+          break;
         }
-        score += food.score;
-        food = randomFood();
+      }
+
+      if (ateFood) {
+        foods = randomFoodPair();
       } else {
         snake.pop();
       }
@@ -234,7 +323,7 @@
       updateScore();
     }
 
-    food = randomFood();
+    foods = randomFoodPair();
     setInterval(gameLoop, 100);
   </script>
 
