@@ -1,5 +1,5 @@
 # SnakeGame
-NO WAY THATS ACTUALLY A DEFAULT SNAKE GAME (or not default?)
+NO WAY THATS ACTUALLY A DEFAULT SNAKE GAME *(or not default?)*
 
 Hello guys!
 
@@ -14,18 +14,18 @@ btw i forgot to say if u found any bugs *(small chance)* saned this bugs to me i
 
 # 📝 Snake Game — Update Log
 # ✅ v1.0 – 🎉 Initial Release
-🎮 Basic movement using arrow keys (← ↑ → ↓)
+🎮 Basic movement using arrow keys *(← ↑ → ↓)*
 
-🟪 Snake rendering and a classic green apple
+🟪 Snake rendering and classic green apple
 
-🛑 Game ends when hitting walls or the snake's own body
+🛑 Game ends when hitting walls or the snake’s own body
 
 # 🍎 v1.1 – Colorful Apples Added
 🟥 Red Apple – removes 1 segment and -1 point 😠
 
 🟦 Blue Apple – adds 5 segments and +5 points 😍
 
-🔁 Random spawn chances for each apple:
+🔁 Random apple spawn chances:
 
 🟩 Green – 40% 🍏
 
@@ -41,16 +41,39 @@ btw i forgot to say if u found any bugs *(small chance)* saned this bugs to me i
 🟨 Yellow Apple – removes 5 segments and -5 points 😵
 
 # 🏆 v1.3 – Score & High Score System
-🧮 Added score counter with current and best score display!
+🧮 Score counter added with current and best score display
 
-🏅 High Score saved using localStorage — survives page reloads 🔄
+🏅 High Score saved via localStorage — survives page reloads 🔄
 
 📊 Display format: Score: X | High Score: Y above the canvas
 
-# ⏱️ v1.4 - Time
-⌛ Survival time added, displays how long you lasted in the game.
+# ⏱️ v1.4 – Time
+⌛ Survival timer added — shows how long you lasted in the game
 
-# 📱 v1.5 - Pause & Mobile controls
-📲 Mobile support added with touch controls (⬆️⬇️⬅️➡️).
+📱 v1.5 – Pause & Mobile Controls
+📲 Mobile control buttons added *(⬆️⬇️⬅️➡️)*
 
-⏸️ Pause feature added — press P or tap the Pause button to pause/resume.
+⏸️ Pause/Resume feature — press P or tap the pause button to toggle
+
+# 🧩 v1.6 – Apple Switches & Victory!
+✅ New toggle switches added to the right of the game field:
+
+🔘 Black Apple – enables chance for black apple that ends the game ☠️
+
+🔘 2 Apples – spawns 2 apples when enabled
+
+🔘 3 Apples – spawns 3 apples when enabled
+
+🔘 4 Apples – spawns 4 apples when enabled
+
+🔘 5 Apples – spawns 5 apples when enabled
+
+🔘 White Apple – ultra-rare white apple that wins the game 🎉
+
+🏁 Collecting a white apple shows this message:
+
+Congratulations! You've complete the snake game! 🎉
+
+🎯 Multiple toggles can be active at once — food generation logic updated accordingly
+
+⚙️ randomFood() logic extended to support all new features
